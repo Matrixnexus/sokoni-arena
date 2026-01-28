@@ -4,87 +4,9 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Calendar } from "lucide-react";
-
-const mockEvents = [
-  {
-    id: "e1",
-    title: "Nairobi Tech Week 2024 - Innovation Summit",
-    price: 5000,
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80",
-    location: "KICC, Nairobi",
-    category: "event" as const,
-    eventDate: "Mar 15",
-    isSponsored: true,
-  },
-  {
-    id: "e2",
-    title: "Blankets & Wine - Music Festival",
-    price: 3500,
-    image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&q=80",
-    location: "Ngong Racecourse",
-    category: "event" as const,
-    eventDate: "Mar 22",
-    isFeatured: true,
-  },
-  {
-    id: "e3",
-    title: "Photography Workshop for Beginners",
-    price: 0,
-    image: "https://images.unsplash.com/photo-1552168324-d612d77725e3?w=500&q=80",
-    location: "Nairobi National Museum",
-    category: "event" as const,
-    eventDate: "Mar 18",
-    isFree: true,
-  },
-  {
-    id: "e4",
-    title: "Startup Pitch Night - Investor Meetup",
-    price: 2000,
-    image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=500&q=80",
-    location: "iHub, Nairobi",
-    category: "event" as const,
-    eventDate: "Mar 25",
-  },
-  {
-    id: "e5",
-    title: "Art Exhibition - African Contemporary",
-    price: 1500,
-    image: "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=500&q=80",
-    location: "GoDown Arts Centre",
-    category: "event" as const,
-    eventDate: "Mar 20",
-  },
-  {
-    id: "e6",
-    title: "Yoga & Wellness Retreat",
-    price: 8000,
-    image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=500&q=80",
-    location: "Naivasha",
-    category: "event" as const,
-    eventDate: "Apr 5",
-    isSponsored: true,
-  },
-  {
-    id: "e7",
-    title: "Stand-Up Comedy Night",
-    price: 2500,
-    image: "https://images.unsplash.com/photo-1527224538127-2104bb71c51b?w=500&q=80",
-    location: "K1 Klubhouse",
-    category: "event" as const,
-    eventDate: "Mar 28",
-  },
-  {
-    id: "e8",
-    title: "Farmers Market - Organic Produce",
-    price: 0,
-    image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=500&q=80",
-    location: "Karura Forest",
-    category: "event" as const,
-    eventDate: "Every Sat",
-    isFree: true,
-  },
-];
+import { Search, SlidersHorizontal, Calendar, Loader2 } from "lucide-react";
+import { useListings } from "@/hooks/useListings";
+import { format } from "date-fns";
 
 const categories = [
   "All Events",
@@ -101,6 +23,13 @@ export default function Events() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Events");
   const [sortBy, setSortBy] = useState("date");
+
+  const { listings, isLoading, error } = useListings({
+    type: "event",
+    category: selectedCategory,
+    searchQuery,
+    sortBy,
+  });
 
   return (
     <Layout>
@@ -168,21 +97,66 @@ export default function Events() {
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{mockEvents.length}</span> events
+            Showing <span className="font-medium text-foreground">{listings.length}</span> events
           </p>
         </div>
 
-        <div className="listing-grid">
-          {mockEvents.map((event) => (
-            <ListingCard key={event.id} {...event} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
 
-        <div className="text-center mt-10">
-          <Button variant="outline" size="lg">
-            Load More Events
-          </Button>
-        </div>
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-destructive mb-4">Error loading events: {error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && listings.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground mb-4">No events found matching your criteria.</p>
+            <Button variant="outline" onClick={() => {
+              setSearchQuery("");
+              setSelectedCategory("All Events");
+            }}>
+              Clear Filters
+            </Button>
+          </div>
+        )}
+
+        {/* Grid */}
+        {!isLoading && !error && listings.length > 0 && (
+          <div className="listing-grid">
+            {listings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price || undefined}
+                image={listing.images?.[0] || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&q=80"}
+                location={listing.location}
+                category="event"
+                isSponsored={listing.is_sponsored || false}
+                isFeatured={listing.is_featured || false}
+                isFree={listing.is_free || false}
+                eventDate={listing.event_date ? format(new Date(listing.event_date), "MMM d") : undefined}
+              />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && listings.length > 0 && (
+          <div className="text-center mt-10">
+            <Button variant="outline" size="lg">
+              Load More Events
+            </Button>
+          </div>
+        )}
       </div>
     </Layout>
   );
