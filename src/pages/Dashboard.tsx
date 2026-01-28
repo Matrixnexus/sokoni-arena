@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Eye, Edit, Trash2, Package, Sparkles, Calendar, TrendingUp, Heart, Loader2, User } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Package, Sparkles, Calendar, TrendingUp, Heart, Loader2, User, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +43,7 @@ const typeIcons = {
 };
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -145,18 +145,29 @@ export default function Dashboard() {
             <h1 className="font-display text-3xl font-bold mb-1">Dashboard</h1>
             <p className="text-muted-foreground">Manage your listings and profile</p>
           </div>
-          <Tabs value={dashboardTab} onValueChange={(v) => { setDashboardTab(v); setSearchParams({ tab: v }); }}>
-            <TabsList>
-              <TabsTrigger value="listings">
-                <Package className="h-4 w-4 mr-1" />
-                Listings
-              </TabsTrigger>
-              <TabsTrigger value="profile">
-                <User className="h-4 w-4 mr-1" />
-                Profile
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-3">
+            {/* Admin Panel Button - Only visible to admins */}
+            {isAdmin && (
+              <Button asChild variant="outline" className="border-primary/50 text-primary hover:bg-primary/10">
+                <Link to="/admin">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
+            <Tabs value={dashboardTab} onValueChange={(v) => { setDashboardTab(v); setSearchParams({ tab: v }); }}>
+              <TabsList>
+                <TabsTrigger value="listings">
+                  <Package className="h-4 w-4 mr-1" />
+                  Listings
+                </TabsTrigger>
+                <TabsTrigger value="profile">
+                  <User className="h-4 w-4 mr-1" />
+                  Profile
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         {dashboardTab === "profile" ? (
