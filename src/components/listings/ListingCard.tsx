@@ -9,7 +9,7 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 interface ListingCardProps {
   id: string;
   title: string;
-  price: number;
+  price?: number;
   originalPrice?: number;
   image: string;
   location: string;
@@ -110,9 +110,9 @@ export function ListingCard({
           {/* Price & Rating */}
           <div className="mt-auto flex items-end justify-between">
             <div>
-              {category === "event" && isFree ? (
+              {isFree ? (
                 <span className="text-primary font-bold text-sm">FREE</span>
-              ) : (
+              ) : price ? (
                 <>
                   {originalPrice && (
                     <span className="price-original">KES {originalPrice.toLocaleString()}</span>
@@ -124,6 +124,8 @@ export function ListingCard({
                     KES {price.toLocaleString()}
                   </span>
                 </>
+              ) : (
+                <span className="text-muted-foreground text-sm">Contact for price</span>
               )}
             </div>
             

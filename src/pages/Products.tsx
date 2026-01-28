@@ -4,128 +4,8 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Grid3X3, LayoutGrid } from "lucide-react";
-
-// Mock data
-const mockProducts = [
-  {
-    id: "1",
-    title: "iPhone 15 Pro Max 256GB - Like New Condition",
-    price: 145000,
-    originalPrice: 180000,
-    image: "https://images.unsplash.com/photo-1696446701796-da61225697cc?w=500&q=80",
-    location: "Nairobi, Westlands",
-    category: "product" as const,
-    isSponsored: true,
-    rating: 4.9,
-  },
-  {
-    id: "2",
-    title: "Toyota Vitz 2018 - Low Mileage",
-    price: 950000,
-    originalPrice: 1100000,
-    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=500&q=80",
-    location: "Mombasa",
-    category: "product" as const,
-    rating: 4.7,
-  },
-  {
-    id: "3",
-    title: "Samsung 55\" 4K Smart TV",
-    price: 65000,
-    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&q=80",
-    location: "Kisumu",
-    category: "product" as const,
-    isFeatured: true,
-    rating: 4.8,
-  },
-  {
-    id: "4",
-    title: "MacBook Pro M3 14\" - Brand New",
-    price: 280000,
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&q=80",
-    location: "Nairobi, CBD",
-    category: "product" as const,
-    rating: 5.0,
-  },
-  {
-    id: "5",
-    title: "Nike Air Jordan 1 Retro High",
-    price: 18500,
-    originalPrice: 22000,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80",
-    location: "Nakuru",
-    category: "product" as const,
-    rating: 4.6,
-  },
-  {
-    id: "6",
-    title: "PlayStation 5 Digital Edition",
-    price: 75000,
-    image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500&q=80",
-    location: "Eldoret",
-    category: "product" as const,
-    isSponsored: true,
-    rating: 4.9,
-  },
-  {
-    id: "7",
-    title: "Leather Sofa Set - 7 Seater",
-    price: 85000,
-    originalPrice: 95000,
-    image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80",
-    location: "Nairobi, Kilimani",
-    category: "product" as const,
-    rating: 4.5,
-  },
-  {
-    id: "8",
-    title: "Canon EOS R6 Mark II",
-    price: 320000,
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=500&q=80",
-    location: "Nairobi, Karen",
-    category: "product" as const,
-    isFeatured: true,
-    rating: 4.8,
-  },
-  {
-    id: "9",
-    title: "Dining Table Set - 6 Seater Mahogany",
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=80",
-    location: "Thika",
-    category: "product" as const,
-    rating: 4.4,
-  },
-  {
-    id: "10",
-    title: "Samsung Galaxy S24 Ultra",
-    price: 165000,
-    image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=80",
-    location: "Nairobi, Lavington",
-    category: "product" as const,
-    rating: 4.9,
-  },
-  {
-    id: "11",
-    title: "Mountain Bike - Shimano Gears",
-    price: 35000,
-    originalPrice: 42000,
-    image: "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=500&q=80",
-    location: "Naivasha",
-    category: "product" as const,
-    rating: 4.6,
-  },
-  {
-    id: "12",
-    title: "Hisense Double Door Fridge",
-    price: 55000,
-    image: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=500&q=80",
-    location: "Machakos",
-    category: "product" as const,
-    rating: 4.5,
-  },
-];
+import { Search, SlidersHorizontal, Grid3X3, LayoutGrid, Loader2 } from "lucide-react";
+import { useListings } from "@/hooks/useListings";
 
 const categories = [
   "All Categories",
@@ -142,6 +22,13 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("newest");
+
+  const { listings, isLoading, error } = useListings({
+    type: "product",
+    category: selectedCategory,
+    searchQuery,
+    sortBy,
+  });
 
   return (
     <Layout>
@@ -211,7 +98,7 @@ export default function Products() {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{mockProducts.length}</span> products
+            Showing <span className="font-medium text-foreground">{listings.length}</span> products
           </p>
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="icon">
@@ -223,19 +110,63 @@ export default function Products() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-destructive mb-4">Error loading products: {error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && listings.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground mb-4">No products found matching your criteria.</p>
+            <Button variant="outline" onClick={() => {
+              setSearchQuery("");
+              setSelectedCategory("All Categories");
+            }}>
+              Clear Filters
+            </Button>
+          </div>
+        )}
+
         {/* Grid */}
-        <div className="listing-grid">
-          {mockProducts.map((product) => (
-            <ListingCard key={product.id} {...product} />
-          ))}
-        </div>
+        {!isLoading && !error && listings.length > 0 && (
+          <div className="listing-grid">
+            {listings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price || undefined}
+                originalPrice={listing.original_price || undefined}
+                image={listing.images?.[0] || "https://images.unsplash.com/photo-1560472355-536de3962603?w=500&q=80"}
+                location={listing.location}
+                category="product"
+                isSponsored={listing.is_sponsored || false}
+                isFeatured={listing.is_featured || false}
+                isFree={listing.is_free || false}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Load More */}
-        <div className="text-center mt-10">
-          <Button variant="outline" size="lg">
-            Load More Products
-          </Button>
-        </div>
+        {!isLoading && listings.length > 0 && (
+          <div className="text-center mt-10">
+            <Button variant="outline" size="lg">
+              Load More Products
+            </Button>
+          </div>
+        )}
       </div>
     </Layout>
   );

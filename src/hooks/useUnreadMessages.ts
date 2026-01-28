@@ -1,10 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useUnreadMessages() {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const previousCountRef = useRef(0);
+
+  const showPushNotification = useCallback((senderName: string, messagePreview: string) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(`New message from ${senderName}`, {
+            body: messagePreview.length > 100 ? `${messagePreview.slice(0, 100)}...` : messagePreview,
+            icon: "/pwa-192x192.svg",
+            badge: "/pwa-192x192.svg",
+            tag: "new-message",
+          });
+        });
+      } else {
+        new Notification(`New message from ${senderName}`, {
+          body: messagePreview.length > 100 ? `${messagePreview.slice(0, 100)}...` : messagePreview,
+          icon: "/pwa-192x192.svg",
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +66,33 @@ export function useUnreadMessages() {
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        async (payload) => {
+          const newMessage = payload.new as { sender_id: string; content: string; conversation_id: string };
+          
+          // Only show notification if message is not from current user
+          if (newMessage.sender_id !== user.id) {
+            // Fetch sender's profile
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("username")
+              .eq("user_id", newMessage.sender_id)
+              .maybeSingle();
+
+            const senderName = profile?.username || "Someone";
+            showPushNotification(senderName, newMessage.content);
+          }
+
+          fetchUnreadCount();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
           schema: "public",
           table: "messages",
         },
@@ -58,7 +105,7 @@ export function useUnreadMessages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, showPushNotification]);
 
   return unreadCount;
 }

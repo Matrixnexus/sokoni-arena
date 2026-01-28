@@ -4,85 +4,8 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal } from "lucide-react";
-
-const mockServices = [
-  {
-    id: "s1",
-    title: "Professional Home Cleaning Services",
-    price: 3500,
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80",
-    location: "Nairobi",
-    category: "service" as const,
-    rating: 4.9,
-    isSponsored: true,
-  },
-  {
-    id: "s2",
-    title: "Expert Web & App Development",
-    price: 50000,
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&q=80",
-    location: "Remote / Kenya",
-    category: "service" as const,
-    rating: 5.0,
-    isFeatured: true,
-  },
-  {
-    id: "s3",
-    title: "Interior Design Consultation",
-    price: 15000,
-    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&q=80",
-    location: "Nairobi, Westlands",
-    category: "service" as const,
-    rating: 4.7,
-  },
-  {
-    id: "s4",
-    title: "Personal Fitness Training",
-    price: 4000,
-    image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&q=80",
-    location: "Nairobi",
-    category: "service" as const,
-    rating: 4.8,
-  },
-  {
-    id: "s5",
-    title: "Wedding Photography & Videography",
-    price: 80000,
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=500&q=80",
-    location: "Kenya Wide",
-    category: "service" as const,
-    rating: 4.9,
-    isSponsored: true,
-  },
-  {
-    id: "s6",
-    title: "Professional Catering Services",
-    price: 25000,
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=500&q=80",
-    location: "Nairobi",
-    category: "service" as const,
-    rating: 4.6,
-  },
-  {
-    id: "s7",
-    title: "Plumbing & Electrical Repairs",
-    price: 2500,
-    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&q=80",
-    location: "Nairobi, Eastlands",
-    category: "service" as const,
-    rating: 4.5,
-  },
-  {
-    id: "s8",
-    title: "Private Tutoring - All Subjects",
-    price: 1500,
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=500&q=80",
-    location: "Nairobi",
-    category: "service" as const,
-    rating: 4.8,
-  },
-];
+import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
+import { useListings } from "@/hooks/useListings";
 
 const categories = [
   "All Categories",
@@ -99,6 +22,13 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("newest");
+
+  const { listings, isLoading, error } = useListings({
+    type: "service",
+    category: selectedCategory,
+    searchQuery,
+    sortBy,
+  });
 
   return (
     <Layout>
@@ -163,21 +93,66 @@ export default function Services() {
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{mockServices.length}</span> services
+            Showing <span className="font-medium text-foreground">{listings.length}</span> services
           </p>
         </div>
 
-        <div className="listing-grid">
-          {mockServices.map((service) => (
-            <ListingCard key={service.id} {...service} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
 
-        <div className="text-center mt-10">
-          <Button variant="outline" size="lg">
-            Load More Services
-          </Button>
-        </div>
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-destructive mb-4">Error loading services: {error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && listings.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground mb-4">No services found matching your criteria.</p>
+            <Button variant="outline" onClick={() => {
+              setSearchQuery("");
+              setSelectedCategory("All Categories");
+            }}>
+              Clear Filters
+            </Button>
+          </div>
+        )}
+
+        {/* Grid */}
+        {!isLoading && !error && listings.length > 0 && (
+          <div className="listing-grid">
+            {listings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price || undefined}
+                originalPrice={listing.original_price || undefined}
+                image={listing.images?.[0] || "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=500&q=80"}
+                location={listing.location}
+                category="service"
+                isSponsored={listing.is_sponsored || false}
+                isFeatured={listing.is_featured || false}
+                isFree={listing.is_free || false}
+              />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && listings.length > 0 && (
+          <div className="text-center mt-10">
+            <Button variant="outline" size="lg">
+              Load More Services
+            </Button>
+          </div>
+        )}
       </div>
     </Layout>
   );
