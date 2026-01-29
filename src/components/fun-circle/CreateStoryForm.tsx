@@ -3,12 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImagePlus, X, Loader2, Send } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ImagePlus, X, Loader2, Send, Palette, Type } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFunCircleStories } from "@/hooks/useFunCircleStories";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  STORY_BACKGROUND_COLORS,
+  STORY_FONTS,
+  STORY_TEXT_COLORS,
+} from "@/contexts/FunCircleSettingsContext";
 
 interface CreateStoryFormProps {
   onSuccess?: () => void;
@@ -23,6 +29,9 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [storyBg, setStoryBg] = useState("transparent");
+  const [storyFont, setStoryFont] = useState("Inter, sans-serif");
+  const [storyTextColor, setStoryTextColor] = useState("inherit");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,8 +117,22 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
 
   return (
     <Card className="p-4 space-y-4">
+      {/* Preview with styling */}
+      {(storyBg !== "transparent" || storyFont !== "Inter, sans-serif" || storyTextColor !== "inherit") && content.trim() && (
+        <div
+          className="p-4 rounded-lg min-h-[60px]"
+          style={{
+            background: storyBg,
+            fontFamily: storyFont,
+            color: storyTextColor === "inherit" ? undefined : storyTextColor,
+          }}
+        >
+          <p className="text-sm whitespace-pre-wrap">{content}</p>
+        </div>
+      )}
+
       <div className="flex gap-3">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={profile?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
             {profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
@@ -121,6 +144,10 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="min-h-[80px] resize-none border-0 focus-visible:ring-0 p-0 text-base"
+            style={{
+              fontFamily: storyFont,
+              color: storyTextColor === "inherit" ? undefined : storyTextColor,
+            }}
           />
         </div>
       </div>
@@ -145,8 +172,8 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between pt-2 border-t flex-wrap gap-2">
+        <div className="flex items-center gap-1 flex-wrap">
           <input
             ref={fileInputRef}
             type="file"
@@ -168,8 +195,114 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
             )}
             Photo
           </Button>
-          <span className="text-xs text-muted-foreground">
-            {remainingImages - images.length} images left today
+
+          {/* Background Color Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Palette className="h-4 w-4 mr-2" />
+                Theme
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="start">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium mb-2">Background</p>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {STORY_BACKGROUND_COLORS.slice(0, 12).map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setStoryBg(color.value)}
+                        className={`h-7 w-7 rounded border transition-all ${
+                          storyBg === color.value
+                            ? "ring-2 ring-primary ring-offset-1"
+                            : "hover:scale-110"
+                        }`}
+                        style={{ background: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs font-medium mt-3 mb-2">Gradients</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {STORY_BACKGROUND_COLORS.slice(12).map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setStoryBg(color.value)}
+                        className={`h-8 rounded border transition-all ${
+                          storyBg === color.value
+                            ? "ring-2 ring-primary ring-offset-1"
+                            : "hover:scale-105"
+                        }`}
+                        style={{ background: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Font Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Type className="h-4 w-4 mr-2" />
+                Font
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium mb-2">Font Style</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {STORY_FONTS.map((font) => (
+                      <button
+                        key={font.name}
+                        onClick={() => setStoryFont(font.value)}
+                        className={`p-2 rounded border text-left text-xs transition-all ${
+                          storyFont === font.value
+                            ? "border-primary bg-primary/5"
+                            : "hover:bg-accent"
+                        }`}
+                        style={{ fontFamily: font.value }}
+                      >
+                        {font.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium mb-2">Text Color</p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {STORY_TEXT_COLORS.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setStoryTextColor(color.value)}
+                        className={`h-8 rounded border flex items-center justify-center transition-all ${
+                          storyTextColor === color.value
+                            ? "ring-2 ring-primary ring-offset-1"
+                            : "hover:scale-105"
+                        }`}
+                        title={color.name}
+                      >
+                        <span
+                          className="text-sm font-bold"
+                          style={{ color: color.value === "inherit" ? undefined : color.value }}
+                        >
+                          A
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            {remainingImages - images.length} images left
           </span>
         </div>
 
@@ -183,7 +316,7 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
           ) : (
             <Send className="h-4 w-4 mr-2" />
           )}
-          Post Story
+          Post
         </Button>
       </div>
     </Card>

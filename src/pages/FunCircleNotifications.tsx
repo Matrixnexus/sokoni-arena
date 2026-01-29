@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Bell, UserPlus, Heart, AtSign, Check, X, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFunCircleFriends } from "@/hooks/useFunCircleFriends";
@@ -25,6 +25,7 @@ interface Notification {
 
 export default function FunCircleNotifications() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { pendingRequests, acceptRequest, rejectRequest } = useFunCircleFriends();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +52,39 @@ export default function FunCircleNotifications() {
   const markAsRead = async (id: string) => {
     await supabase.from("notifications").update({ read: true }).eq("id", id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    markAsRead(notification.id);
+    
+    // Navigate based on notification type
+    const { type, metadata } = notification;
+    
+    switch (type) {
+      case "friend_request":
+        // Stay on this page, switch to requests tab or just mark read
+        break;
+      case "friend_accepted":
+        // Navigate to the friend's profile if user_id is in metadata
+        if (metadata?.user_id) {
+          navigate(`/profile/${metadata.user_id}`);
+        }
+        break;
+      case "fun_circle_story":
+        // Navigate to fun circle main page
+        navigate("/fun-circle");
+        break;
+      case "fun_circle_mention":
+        // Navigate to the story if story_id is in metadata
+        if (metadata?.story_id) {
+          navigate("/fun-circle");
+        } else {
+          navigate("/fun-circle");
+        }
+        break;
+      default:
+        navigate("/fun-circle");
+    }
   };
 
   const getIcon = (type: string) => {
@@ -117,8 +151,8 @@ export default function FunCircleNotifications() {
                       {notifications.map(notification => (
                         <button
                           key={notification.id}
-                          onClick={() => markAsRead(notification.id)}
-                          className={`w-full flex items-start gap-3 p-4 text-left hover:bg-muted/50 ${
+                          onClick={() => handleNotificationClick(notification)}
+                          className={`w-full flex items-start gap-3 p-4 text-left hover:bg-muted/50 transition-colors ${
                             !notification.read ? "bg-primary/5" : ""
                           }`}
                         >
@@ -162,7 +196,10 @@ export default function FunCircleNotifications() {
                   <div className="divide-y">
                     {pendingRequests.map(request => (
                       <div key={request.id} className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
+                        <Link
+                          to={`/profile/${request.requester_id}`}
+                          className="flex items-center gap-3"
+                        >
                           <Avatar>
                             <AvatarImage src={request.profile?.avatar_url || ""} />
                             <AvatarFallback className="bg-primary/10 text-primary">
@@ -175,7 +212,7 @@ export default function FunCircleNotifications() {
                               {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                             </p>
                           </div>
-                        </div>
+                        </Link>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => acceptRequest(request.id)}>
                             <Check className="h-4 w-4 mr-1" />

@@ -354,3 +354,33 @@
     @apply bg-primary/30 rounded-full hover:bg-primary/50;
   }
 }
+
+/* Fun Circle Theme Overrides */
+.fun-circle-dark {
+  --background: 220 25% 6%;
+  --foreground: 0 0% 98%;
+  --card: 220 25% 8%;
+  --card-foreground: 0 0% 98%;
+  --popover: 220 25% 8%;
+  --popover-foreground: 0 0% 98%;
+  --muted: 220 20% 15%;
+  --muted-foreground: 220 10% 60%;
+  --border: 220 20% 18%;
+  --input: 220 20% 18%;
+}
+
+.fun-circle-light {
+  --background: 0 0% 99%;
+  --foreground: 220 20% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 20% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 20% 10%;
+  --muted: 220 15% 96%;
+  --muted-foreground: 220 10% 45%;
+  --border: 220 15% 90%;
+  --input: 220 15% 90%;
+}
+
+/* Import Google Fonts for Story text options */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Oswald:wght@400;500;600&family=Playfair+Display:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap');

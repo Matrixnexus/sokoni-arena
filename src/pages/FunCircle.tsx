@@ -6,19 +6,28 @@ import { FriendsPanel } from "@/components/fun-circle/FriendsPanel";
 import { MessagesDrawer } from "@/components/fun-circle/MessagesDrawer";
 import { MobileFriendsSheet } from "@/components/fun-circle/MobileFriendsSheet";
 import { ProfileHeader } from "@/components/fun-circle/ProfileHeader";
+import { FunCircleSettingsSheet } from "@/components/fun-circle/FunCircleSettingsSheet";
+import { FunCircleSettingsProvider, useFunCircleSettings } from "@/contexts/FunCircleSettingsContext";
 import { useFunCircleStories, ReactionType } from "@/hooks/useFunCircleStories";
 import { useFunCircleMessages } from "@/hooks/useFunCircleMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, Users, Sparkles, LogIn, Bell } from "lucide-react";
+import { MessageCircle, Users, Sparkles, LogIn, Bell, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
-export default function FunCircle() {
+function FunCircleContent() {
   const { user } = useAuth();
+  const { settings } = useFunCircleSettings();
   const { stories, isLoading, addReaction, deleteStory } = useFunCircleStories();
-  const { startConversation, conversations, openConversation } = useFunCircleMessages();
+  const { 
+    startConversation, 
+    conversations, 
+    openConversation,
+    currentConversation 
+  } = useFunCircleMessages();
   const [showMessages, setShowMessages] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
 
@@ -30,7 +39,13 @@ export default function FunCircle() {
   const handleStartChat = async (userId: string) => {
     const conv = await startConversation(userId);
     if (conv) {
-      await openConversation(conv);
+      // Find the full conversation with other_user info
+      const fullConv = conversations.find(c => c.id === conv.id);
+      if (fullConv) {
+        await openConversation(fullConv);
+      } else {
+        await openConversation(conv);
+      }
       setShowMessages(true);
     }
   };
@@ -38,6 +53,12 @@ export default function FunCircle() {
   const handleReact = (storyId: string, reactionType: ReactionType) => {
     addReaction(storyId, reactionType);
   };
+
+  // Apply theme class based on settings
+  const themeClass = cn({
+    "fun-circle-dark": settings.theme.mode === "dark",
+    "fun-circle-light": settings.theme.mode === "light",
+  });
 
   if (!user) {
     return (
@@ -70,9 +91,9 @@ export default function FunCircle() {
 
   return (
     <Layout>
-      <div className="container py-6">
+      <div className={cn("container py-6", themeClass)}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-primary-foreground" />
@@ -84,9 +105,11 @@ export default function FunCircle() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <FunCircleSettingsSheet />
             <Button
               variant="outline"
+              size="sm"
               asChild
             >
               <Link to="/fun-circle/notifications">
@@ -96,6 +119,7 @@ export default function FunCircle() {
             </Button>
             <Button
               variant="outline"
+              size="sm"
               className="relative"
               onClick={() => setShowMessages(true)}
             >
@@ -152,23 +176,24 @@ export default function FunCircle() {
           {/* Sidebar */}
           <div className="hidden lg:block space-y-6">
             <FriendsPanel onStartChat={handleStartChat} />
-            
-            {showMessages && (
-              <div className="fixed inset-y-0 right-0 w-[380px] z-50 shadow-xl">
-                <MessagesDrawer
-                  isOpen={showMessages}
-                  onClose={() => setShowMessages(false)}
-                />
-                <button
-                  className="absolute top-4 left-4 p-2 rounded-full bg-background shadow"
-                  onClick={() => setShowMessages(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Desktop Messages Drawer */}
+        {showMessages && (
+          <div className="hidden lg:block fixed inset-y-0 right-0 w-[380px] z-50 shadow-xl bg-background border-l">
+            <MessagesDrawer
+              isOpen={showMessages}
+              onClose={() => setShowMessages(false)}
+            />
+            <button
+              className="absolute top-4 left-4 p-2 rounded-full bg-background shadow hover:bg-accent"
+              onClick={() => setShowMessages(false)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Mobile Friends & Messages */}
         <div className="lg:hidden fixed bottom-20 right-4 flex flex-col gap-2 z-40">
@@ -209,14 +234,22 @@ export default function FunCircle() {
           <div className="lg:hidden fixed inset-0 z-50 bg-background">
             <MessagesDrawer isOpen={showMessages} onClose={() => setShowMessages(false)} />
             <button
-              className="absolute top-4 right-4 p-2"
+              className="absolute top-4 right-4 p-2 hover:bg-accent rounded-lg"
               onClick={() => setShowMessages(false)}
             >
-              ✕
+              <X className="h-5 w-5" />
             </button>
           </div>
         )}
       </div>
     </Layout>
+  );
+}
+
+export default function FunCircle() {
+  return (
+    <FunCircleSettingsProvider>
+      <FunCircleContent />
+    </FunCircleSettingsProvider>
   );
 }
