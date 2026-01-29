@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImagePlus, X, Loader2, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFunCircleStories } from "@/hooks/useFunCircleStories";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +16,7 @@ interface CreateStoryFormProps {
 
 export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const { toast } = useToast();
   const { createStory, remainingImages } = useFunCircleStories();
   const [content, setContent] = useState("");
@@ -108,9 +110,9 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
     <Card className="p-4 space-y-4">
       <div className="flex gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src="" />
+          <AvatarImage src={profile?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
-            {user?.email?.charAt(0).toUpperCase()}
+            {profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">

@@ -5,6 +5,7 @@ import { StoryCard } from "@/components/fun-circle/StoryCard";
 import { FriendsPanel } from "@/components/fun-circle/FriendsPanel";
 import { MessagesDrawer } from "@/components/fun-circle/MessagesDrawer";
 import { MobileFriendsSheet } from "@/components/fun-circle/MobileFriendsSheet";
+import { ProfileHeader } from "@/components/fun-circle/ProfileHeader";
 import { useFunCircleStories, ReactionType } from "@/hooks/useFunCircleStories";
 import { useFunCircleMessages } from "@/hooks/useFunCircleMessages";
 import { useAuth } from "@/contexts/AuthContext";
@@ -112,6 +113,9 @@ export default function FunCircle() {
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           {/* Main Feed */}
           <div className="space-y-6">
+            {/* Profile Header with Avatar Update */}
+            <ProfileHeader />
+            
             {/* Create Story */}
             <CreateStoryForm />
 
