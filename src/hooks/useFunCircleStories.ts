@@ -67,50 +67,56 @@ export function useFunCircleStories() {
         .from("fun_circle_stories")
         .select("*")
         .gt("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(50); // Limit for performance
 
       if (error) throw error;
-
-      // Get profiles for each story
-      const userIds = [...new Set(data?.map(s => s.user_id) || [])];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, username, avatar_url")
-        .in("user_id", userIds);
-
-      // Get user's reactions (only if logged in)
-      let userReactions = new Map<string, ReactionType>();
-      if (user) {
-        const { data: reactions } = await supabase
-          .from("fun_circle_story_reactions")
-          .select("story_id, reaction_type")
-          .eq("user_id", user.id);
-
-        userReactions = new Map(
-          reactions?.map(r => [r.story_id, r.reaction_type as ReactionType]) || []
-        );
+      if (!data || data.length === 0) {
+        setStories([]);
+        return;
       }
 
-      // Get mentions for stories
-      const storyIds = data?.map(s => s.id) || [];
-      const { data: mentions } = await supabase
-        .from("fun_circle_mentions")
-        .select("story_id, mentioned_user_id")
-        .in("story_id", storyIds);
+      const userIds = [...new Set(data.map(s => s.user_id))];
+      const storyIds = data.map(s => s.id);
+
+      // Parallel fetch for profiles, reactions, and mentions
+      const [profilesResult, reactionsResult, mentionsResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, username, avatar_url")
+          .in("user_id", userIds),
+        user
+          ? supabase
+              .from("fun_circle_story_reactions")
+              .select("story_id, reaction_type")
+              .eq("user_id", user.id)
+              .in("story_id", storyIds)
+          : Promise.resolve({ data: null }),
+        supabase
+          .from("fun_circle_mentions")
+          .select("story_id, mentioned_user_id")
+          .in("story_id", storyIds),
+      ]);
+
+      const profiles = profilesResult.data || [];
+      const userReactions = new Map<string, ReactionType>(
+        (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type as ReactionType])
+      );
 
       const mentionsByStory = new Map<string, string[]>();
-      mentions?.forEach(m => {
+      (mentionsResult.data || []).forEach(m => {
         const existing = mentionsByStory.get(m.story_id) || [];
         mentionsByStory.set(m.story_id, [...existing, m.mentioned_user_id]);
       });
 
-      const storiesWithProfiles = (data || []).map(story => {
+      // Build stories with all related data
+      const storiesWithProfiles = data.map(story => {
         const rawReactions = story.reactions_count as unknown as ReactionCounts;
         return {
           ...story,
           images: story.images || [],
           reactions_count: rawReactions || defaultReactionCounts,
-          profile: profiles?.find(p => p.user_id === story.user_id),
+          profile: profiles.find(p => p.user_id === story.user_id),
           user_reaction: userReactions.get(story.id) || null,
           mentions: mentionsByStory.get(story.id) || [],
         };
