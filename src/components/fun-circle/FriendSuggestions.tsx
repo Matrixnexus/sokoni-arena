@@ -83,7 +83,7 @@ export function FriendSuggestions({ onSendRequest, excludeIds }: FriendSuggestio
 
   return (
     <ScrollArea className="flex-1 max-h-[300px]">
-      <div className="p-2">
+      <div className="p-2 pr-3">
         <p className="text-xs font-medium text-muted-foreground px-2 mb-2">
           People you may know
         </p>
@@ -128,11 +128,11 @@ function SuggestionCard({
   }
 
   return (
-    <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
       <Link to={`/profile/${suggestion.user_id}`} className="shrink-0">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-10 w-10">
           <AvatarImage src={suggestion.avatar_url || ""} />
-          <AvatarFallback className="bg-primary/10 text-primary">
+          <AvatarFallback className="bg-primary/10 text-primary text-sm">
             {suggestion.username.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -171,15 +171,12 @@ function SuggestionCard({
         size="sm"
         onClick={handleAdd}
         disabled={isAdding}
-        className="shrink-0"
+        className="shrink-0 h-8 px-2"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            <UserPlus className="h-4 w-4 mr-1" />
-            Add
-          </>
+          <UserPlus className="h-4 w-4" />
         )}
       </Button>
     </div>
