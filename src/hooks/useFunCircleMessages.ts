@@ -48,46 +48,44 @@ export function useFunCircleMessages() {
 
       if (error) throw error;
 
-      // Get other participants' profiles
+      // Batch fetch profiles and counts for better performance
       const otherUserIds = (data || []).map(c =>
         c.participant_one === user.id ? c.participant_two : c.participant_one
       );
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, username, avatar_url")
-        .in("user_id", otherUserIds);
+      // Parallel fetches for profiles, unread counts, and last messages
+      const [profilesResult, messagesResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, username, avatar_url")
+          .in("user_id", otherUserIds),
+        supabase
+          .from("fun_circle_messages")
+          .select("conversation_id, content, is_read, sender_id, created_at")
+          .in("conversation_id", (data || []).map(c => c.id))
+          .order("created_at", { ascending: false }),
+      ]);
 
-      // Get unread counts and last messages
-      const conversationsWithDetails = await Promise.all(
-        (data || []).map(async conv => {
-          const otherUserId = conv.participant_one === user.id 
-            ? conv.participant_two 
-            : conv.participant_one;
-          
-          const { count } = await supabase
-            .from("fun_circle_messages")
-            .select("*", { count: "exact", head: true })
-            .eq("conversation_id", conv.id)
-            .eq("is_read", false)
-            .neq("sender_id", user.id);
+      const profiles = profilesResult.data || [];
+      const allMessages = messagesResult.data || [];
 
-          const { data: lastMsg } = await supabase
-            .from("fun_circle_messages")
-            .select("content")
-            .eq("conversation_id", conv.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+      // Process messages to get unread counts and last messages
+      const conversationsWithDetails = (data || []).map(conv => {
+        const otherUserId = conv.participant_one === user.id 
+          ? conv.participant_two 
+          : conv.participant_one;
 
-          return {
-            ...conv,
-            other_user: profiles?.find(p => p.user_id === otherUserId),
-            unread_count: count || 0,
-            last_message: lastMsg?.content,
-          };
-        })
-      );
+        const convMessages = allMessages.filter(m => m.conversation_id === conv.id);
+        const unreadCount = convMessages.filter(m => !m.is_read && m.sender_id !== user.id).length;
+        const lastMessage = convMessages[0]?.content;
+
+        return {
+          ...conv,
+          other_user: profiles.find(p => p.user_id === otherUserId),
+          unread_count: unreadCount,
+          last_message: lastMessage,
+        };
+      });
 
       setConversations(conversationsWithDetails);
     } catch (error) {
@@ -206,7 +204,7 @@ export function useFunCircleMessages() {
     fetchConversations();
   }, [user]);
 
-  // Subscribe to realtime messages
+  // Subscribe to realtime messages for current conversation
   useEffect(() => {
     if (!currentConversation) return;
 
@@ -242,6 +240,31 @@ export function useFunCircleMessages() {
       supabase.removeChannel(channel);
     };
   }, [currentConversation, user]);
+
+  // Subscribe to all conversation updates for unread count
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("fun_circle_all_messages")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "fun_circle_messages",
+        },
+        () => {
+          // Refresh conversations to update unread counts
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return {
     conversations,

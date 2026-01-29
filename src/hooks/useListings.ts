@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { useDebounce } from "./useDebounce";
 
 type Listing = Tables<"listings">;
 type ListingType = "product" | "service" | "event";
@@ -18,74 +19,82 @@ export function useListings(options: UseListingsOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Debounce search query for performance
+  const debouncedSearch = useDebounce(options.searchQuery || "", 300);
+
+  // Memoize query params to prevent unnecessary refetches
+  const queryKey = useMemo(() => 
+    JSON.stringify({
+      type: options.type,
+      category: options.category,
+      search: debouncedSearch,
+      sortBy: options.sortBy,
+      limit: options.limit,
+    }),
+    [options.type, options.category, debouncedSearch, options.sortBy, options.limit]
+  );
+
+  const fetchListings = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    let query = supabase
+      .from("listings")
+      .select("*")
+      .eq("status", "available")
+      .eq("is_sponsored", false);
+
+    if (options.type) {
+      query = query.eq("listing_type", options.type);
+    }
+
+    if (options.category && options.category !== "All Categories" && options.category !== "All Events") {
+      query = query.eq("category", options.category);
+    }
+
+    if (debouncedSearch) {
+      query = query.or(`title.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%`);
+    }
+
+    switch (options.sortBy) {
+      case "price-low":
+        query = query.order("price", { ascending: true, nullsFirst: false });
+        break;
+      case "price-high":
+        query = query.order("price", { ascending: false, nullsFirst: false });
+        break;
+      case "popular":
+        query = query.order("views_count", { ascending: false });
+        break;
+      case "date":
+        query = query.order("event_date", { ascending: true, nullsFirst: false });
+        break;
+      case "rating":
+        query = query.order("favorites_count", { ascending: false });
+        break;
+      default:
+        query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+    }
+
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error: fetchError } = await query;
+
+    if (fetchError) {
+      setError(fetchError.message);
+      setListings([]);
+    } else {
+      setListings(data || []);
+    }
+
+    setIsLoading(false);
+  }, [queryKey]);
+
   useEffect(() => {
-    const fetchListings = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      let query = supabase
-        .from("listings")
-        .select("*")
-        .eq("status", "available")
-        // Exclude sponsored listings from regular queries - they only appear in Promoted section
-        .eq("is_sponsored", false);
-
-      // Filter by type
-      if (options.type) {
-        query = query.eq("listing_type", options.type);
-      }
-
-      // Filter by category
-      if (options.category && options.category !== "All Categories" && options.category !== "All Events") {
-        query = query.eq("category", options.category);
-      }
-
-      // Search query
-      if (options.searchQuery) {
-        query = query.or(`title.ilike.%${options.searchQuery}%,description.ilike.%${options.searchQuery}%`);
-      }
-
-      // Sorting
-      switch (options.sortBy) {
-        case "price-low":
-          query = query.order("price", { ascending: true, nullsFirst: false });
-          break;
-        case "price-high":
-          query = query.order("price", { ascending: false, nullsFirst: false });
-          break;
-        case "popular":
-          query = query.order("views_count", { ascending: false });
-          break;
-        case "date":
-          query = query.order("event_date", { ascending: true, nullsFirst: false });
-          break;
-        case "rating":
-          query = query.order("favorites_count", { ascending: false });
-          break;
-        default:
-          // Featured listings first within category, then by created_at
-          query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
-      }
-
-      // Limit
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        setError(fetchError.message);
-        setListings([]);
-      } else {
-        setListings(data || []);
-      }
-
-      setIsLoading(false);
-    };
-
     fetchListings();
-  }, [options.type, options.category, options.searchQuery, options.sortBy, options.limit]);
+  }, [fetchListings]);
 
-  return { listings, isLoading, error };
+  return { listings, isLoading, error, refetch: fetchListings };
 }

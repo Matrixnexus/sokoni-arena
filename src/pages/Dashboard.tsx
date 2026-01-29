@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ListingForm } from "@/components/dashboard/ListingForm";
 import { SponsorRequestButton } from "@/components/dashboard/SponsorRequestButton";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { FavoritesList } from "@/components/dashboard/FavoritesList";
 import { cn } from "@/lib/utils";
 
 interface Listing {
@@ -161,6 +162,10 @@ export default function Dashboard() {
                   <Package className="h-4 w-4 mr-1" />
                   Listings
                 </TabsTrigger>
+                <TabsTrigger value="favorites">
+                  <Heart className="h-4 w-4 mr-1" />
+                  Favorites
+                </TabsTrigger>
                 <TabsTrigger value="profile">
                   <User className="h-4 w-4 mr-1" />
                   Profile
@@ -172,6 +177,8 @@ export default function Dashboard() {
 
         {dashboardTab === "profile" ? (
           <ProfileEditor />
+        ) : dashboardTab === "favorites" ? (
+          <FavoritesList />
         ) : (
           <>
             {/* Stats Grid */}

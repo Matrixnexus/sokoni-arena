@@ -60,11 +60,9 @@ export function useFunCircleStories() {
   const [imagesUploadedToday, setImagesUploadedToday] = useState(0);
 
   const fetchStories = async () => {
-    if (!user) return;
-
     setIsLoading(true);
     try {
-      // Get stories that haven't expired
+      // Get all non-expired stories (public visibility)
       const { data, error } = await supabase
         .from("fun_circle_stories")
         .select("*")
@@ -80,15 +78,18 @@ export function useFunCircleStories() {
         .select("user_id, username, avatar_url")
         .in("user_id", userIds);
 
-      // Get user's reactions
-      const { data: reactions } = await supabase
-        .from("fun_circle_story_reactions")
-        .select("story_id, reaction_type")
-        .eq("user_id", user.id);
+      // Get user's reactions (only if logged in)
+      let userReactions = new Map<string, ReactionType>();
+      if (user) {
+        const { data: reactions } = await supabase
+          .from("fun_circle_story_reactions")
+          .select("story_id, reaction_type")
+          .eq("user_id", user.id);
 
-      const userReactions = new Map(
-        reactions?.map(r => [r.story_id, r.reaction_type as ReactionType]) || []
-      );
+        userReactions = new Map(
+          reactions?.map(r => [r.story_id, r.reaction_type as ReactionType]) || []
+        );
+      }
 
       // Get mentions for stories
       const storyIds = data?.map(s => s.id) || [];

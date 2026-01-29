@@ -78,10 +78,12 @@ export function StoryCard({ story, onReact, onDelete, onStartChat }: StoryCardPr
           </Link>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs gap-1">
-              <Clock className="h-3 w-3" />
-              Expires {expiresIn}
-            </Badge>
+            {isOwner ? (
+              <Badge variant="outline" className="text-xs gap-1">
+                <Clock className="h-3 w-3" />
+                Expires {expiresIn}
+              </Badge>
+            ) : null}
             
             {isOwner && (
               <DropdownMenu>
