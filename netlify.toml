@@ -2,11 +2,52 @@
   command = "npm run build"
   publish = "dist"
 
+# Serve sitemap files directly (must come BEFORE catch-all redirect)
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap-index.xml"
+  to = "/sitemap-index.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap-pages.xml"
+  to = "/sitemap-pages.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap-products.xml"
+  to = "/sitemap-products.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap-services.xml"
+  to = "/sitemap-services.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap-events.xml"
+  to = "/sitemap-events.xml"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.txt"
+  to = "/sitemap.txt"
+  status = 200
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
+  status = 200
+
+# SPA catch-all redirect (must be LAST)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
 # Sitemap headers
 [[headers]]
   for = "/sitemap.xml"
