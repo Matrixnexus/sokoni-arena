@@ -77,7 +77,7 @@ export function useUnreadMessages() {
           if (newMessage.sender_id !== user.id) {
             // Fetch sender's profile
             const { data: profile } = await supabase
-              .from("profiles")
+              .from("profiles_public")
               .select("username")
               .eq("user_id", newMessage.sender_id)
               .maybeSingle();

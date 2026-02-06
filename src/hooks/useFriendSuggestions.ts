@@ -30,7 +30,7 @@ export function useFriendSuggestions() {
     try {
       // Get current user's profile for location-based matching
       const { data: myProfile } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("location")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -49,7 +49,7 @@ export function useFriendSuggestions() {
 
       // Fetch all potential suggestions
       const { data: allProfiles } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, username, avatar_url, location, bio, is_verified, created_at")
         .not("user_id", "in", `(${Array.from(excludedIds).join(",")})`)
         .limit(50);

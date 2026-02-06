@@ -70,7 +70,7 @@ export function useFunCircleFriends() {
       let profiles: Array<{ user_id: string; username: string; avatar_url: string | null }> = [];
       if (allUserIds.length > 0) {
         const { data } = await supabase
-          .from("profiles")
+          .from("profiles_public")
           .select("user_id, username, avatar_url")
           .in("user_id", allUserIds);
         profiles = data || [];
@@ -198,7 +198,7 @@ export function useFunCircleFriends() {
     if (!user || query.length < 2) return [];
 
     const { data } = await supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("user_id, username, avatar_url")
       .neq("user_id", user.id)
       .ilike("username", `%${query}%`)
