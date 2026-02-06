@@ -43,8 +43,8 @@ interface Listing {
 
 interface Profile {
   username: string;
-  email: string;
-  phone: string | null;
+  email?: string;
+  phone?: string | null;
   avatar_url: string | null;
   is_verified: boolean | null;
   created_at: string;
@@ -96,9 +96,9 @@ export default function ListingDetail() {
 
     setListing(data);
     
-    // Fetch seller profile
+    // Fetch seller profile (use public view, phone is accessible via view)
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("*")
       .eq("user_id", data.user_id)
       .maybeSingle();

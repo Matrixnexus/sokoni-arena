@@ -82,7 +82,7 @@ export function useFunCircleStories() {
       // Parallel fetch for profiles, reactions, and mentions
       const [profilesResult, reactionsResult, mentionsResult] = await Promise.all([
         supabase
-          .from("profiles")
+          .from("profiles_public")
           .select("user_id, username, avatar_url")
           .in("user_id", userIds),
         user
@@ -311,7 +311,7 @@ export function useFunCircleStories() {
 
     const userIds = [...new Set(data?.map(c => c.user_id) || [])];
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("user_id, username, avatar_url")
       .in("user_id", userIds);
 

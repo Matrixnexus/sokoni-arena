@@ -56,7 +56,7 @@ export function useFunCircleMessages() {
       // Parallel fetches for profiles, unread counts, and last messages
       const [profilesResult, messagesResult] = await Promise.all([
         supabase
-          .from("profiles")
+          .from("profiles_public")
           .select("user_id, username, avatar_url")
           .in("user_id", otherUserIds),
         supabase

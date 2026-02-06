@@ -131,7 +131,7 @@ export default function Messages() {
           // Get other user's profile
           const otherUserId = convo.buyer_id === user.id ? convo.seller_id : convo.buyer_id;
           const { data: profile } = await supabase
-            .from("profiles")
+            .from("profiles_public")
             .select("username, avatar_url")
             .eq("user_id", otherUserId)
             .maybeSingle();

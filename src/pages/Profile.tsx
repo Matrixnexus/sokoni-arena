@@ -64,15 +64,32 @@ export default function Profile() {
 
       setIsLoading(true);
 
-      // Fetch profile
+      // Fetch profile - use profiles_public view for public data (excludes email/phone)
+      // Phone is only shown to profile owner via separate query
       const { data: profileData } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (profileData) {
-        setProfile(profileData as Profile);
+        // If viewing own profile, fetch full data including phone
+        if (user?.id === userId) {
+          const { data: fullProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (fullProfile) {
+            setProfile(fullProfile as Profile);
+          }
+        } else {
+          setProfile({
+            ...profileData,
+            email: "", // Hidden for non-owners
+            phone: null, // Hidden for non-owners
+          } as Profile);
+        }
       }
 
       // Fetch user's listings
