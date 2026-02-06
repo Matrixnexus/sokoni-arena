@@ -123,7 +123,7 @@ export default function Messages() {
         convos.map(async (convo) => {
           // Get listing info
           const { data: listing } = await supabase
-            .from("listings")
+            .from("listings_public")
             .select("title, images, price")
             .eq("id", convo.listing_id)
             .maybeSingle();
