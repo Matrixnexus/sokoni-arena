@@ -94,7 +94,7 @@ export default function Profile() {
 
       // Fetch user's listings
       const { data: listingsData } = await supabase
-        .from("listings")
+        .from("listings_public")
         .select("*")
         .eq("user_id", userId)
         .eq("status", "available")

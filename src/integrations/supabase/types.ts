@@ -92,6 +92,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       favorites: {
@@ -119,6 +126,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_public"
             referencedColumns: ["id"]
           },
         ]
@@ -580,6 +594,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sponsor_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -605,6 +626,90 @@ export type Database = {
       }
     }
     Views: {
+      listings_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          delivery_available: boolean | null
+          description: string | null
+          event_date: string | null
+          event_end_date: string | null
+          expires_at: string | null
+          favorites_count: number | null
+          id: string | null
+          images: string[] | null
+          is_featured: boolean | null
+          is_free: boolean | null
+          is_negotiable: boolean | null
+          is_sponsored: boolean | null
+          listing_type: Database["public"]["Enums"]["listing_type"] | null
+          location: string | null
+          original_price: number | null
+          price: number | null
+          sponsored_until: string | null
+          status: Database["public"]["Enums"]["listing_status"] | null
+          subcategory: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+          views_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          delivery_available?: boolean | null
+          description?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          expires_at?: string | null
+          favorites_count?: number | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_free?: boolean | null
+          is_negotiable?: boolean | null
+          is_sponsored?: boolean | null
+          listing_type?: Database["public"]["Enums"]["listing_type"] | null
+          location?: string | null
+          original_price?: number | null
+          price?: number | null
+          sponsored_until?: string | null
+          status?: Database["public"]["Enums"]["listing_status"] | null
+          subcategory?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          delivery_available?: boolean | null
+          description?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          expires_at?: string | null
+          favorites_count?: number | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_free?: boolean | null
+          is_negotiable?: boolean | null
+          is_sponsored?: boolean | null
+          listing_type?: Database["public"]["Enums"]["listing_type"] | null
+          location?: string | null
+          original_price?: number | null
+          price?: number | null
+          sponsored_until?: string | null
+          status?: Database["public"]["Enums"]["listing_status"] | null
+          subcategory?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null

@@ -113,7 +113,7 @@ export default function Search() {
     setIsLoading(true);
 
     let queryBuilder = supabase
-      .from("listings")
+      .from("listings_public")
       .select("*", { count: "exact" })
       .eq("status", "available");
 

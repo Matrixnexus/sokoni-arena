@@ -52,7 +52,7 @@ export const FeaturedListings = memo(function FeaturedListings() {
   useEffect(() => {
     const fetchSponsored = async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from("listings_public")
         .select("id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date")
         .eq("status", "available")
         .eq("is_sponsored", true)

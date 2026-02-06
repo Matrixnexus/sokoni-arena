@@ -38,7 +38,7 @@ export function FavoritesList() {
       }
 
       const { data } = await supabase
-        .from("listings")
+        .from("listings_public")
         .select("id, title, price, location, images, listing_type")
         .in("id", Array.from(favoriteIds))
         .limit(6);

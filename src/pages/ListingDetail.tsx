@@ -79,7 +79,7 @@ export default function ListingDetail() {
   const fetchListing = async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from("listings")
+      .from("listings_public")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -107,7 +107,7 @@ export default function ListingDetail() {
 
     // Fetch related listings
     const { data: related } = await supabase
-      .from("listings")
+      .from("listings_public")
       .select("*")
       .eq("listing_type", data.listing_type)
       .neq("id", data.id)
