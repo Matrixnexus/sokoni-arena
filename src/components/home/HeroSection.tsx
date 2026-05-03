@@ -72,8 +72,8 @@ function MiniBanner({
     <Link
       to={cur ? `/${path}/${cur.id}` : fallbackHref}
       className={cn(
-        "group relative h-[110px] sm:h-[120px] rounded-2xl overflow-hidden shadow-sm border border-border/60",
-        "bg-gradient-to-br text-white",
+        "group relative h-[130px] sm:h-[120px] rounded-2xl overflow-hidden shadow-sm border border-border/60",
+        "bg-gradient-to-br text-white flex flex-col",
         accent
       )}
     >
@@ -81,23 +81,24 @@ function MiniBanner({
       <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" />
       <div className="absolute -left-4 -bottom-4 w-16 h-16 rounded-full bg-white/10" />
 
-      <div className="relative z-10 h-full flex items-center justify-between p-3">
-        <div className="min-w-0 max-w-[55%]">
-          <span className="inline-block bg-white/20 backdrop-blur-sm text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+      {/* MOBILE layout: stacked label/title on top, image below center */}
+      <div className="relative z-10 h-full flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 sm:p-3 gap-1.5">
+        <div className="min-w-0 sm:max-w-[55%]">
+          <span className="inline-block bg-white/25 backdrop-blur-sm text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide leading-none">
             {label}
           </span>
-          <p className="mt-1.5 text-[12px] sm:text-sm font-semibold leading-tight line-clamp-2">
+          <p className="mt-1 text-[11px] sm:text-sm font-semibold leading-tight line-clamp-2">
             {cur?.title ?? "Discover more"}
           </p>
           {cur?.price != null && (
-            <p className="mt-0.5 text-[11px] font-bold text-white/95">
+            <p className="mt-0.5 text-[10px] sm:text-[11px] font-bold text-white/95">
               KES {cur.price.toLocaleString()}
             </p>
           )}
         </div>
 
         {cur && (
-          <div className="relative shrink-0 w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full overflow-hidden bg-white/90 shadow-inner ring-2 ring-white/70">
+          <div className="relative shrink-0 self-end sm:self-auto w-[52px] h-[52px] sm:w-[84px] sm:h-[84px] rounded-full overflow-hidden bg-white/90 shadow-inner ring-2 ring-white/70">
             <img
               src={cur.image}
               alt={cur.title}
@@ -110,12 +111,12 @@ function MiniBanner({
 
       {/* Dots */}
       {items.length > 1 && (
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10 flex gap-1">
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 flex gap-1">
           {items.slice(0, Math.min(4, items.length)).map((_, i) => (
             <span
               key={i}
               className={`h-1 rounded-full transition-all ${
-                i === idx % Math.min(4, items.length) ? "w-4 bg-white" : "w-1 bg-white/60"
+                i === idx % Math.min(4, items.length) ? "w-3 bg-white" : "w-1 bg-white/60"
               }`}
             />
           ))}
@@ -238,9 +239,50 @@ export function HeroSection() {
     return shuffle(items).slice(0, 8);
   }, [shops]);
 
+  // Top category pills (mobile only)
+  const pillCategories = [
+    { icon: Grid3x3, label: "All", href: "/products", active: true },
+    { icon: Smartphone, label: "Phones", href: "/products?category=electronics" },
+    { icon: Cpu, label: "Electronics", href: "/products?category=electronics" },
+    { icon: Shirt, label: "Fashion", href: "/products?category=fashion" },
+    { icon: Home, label: "Home", href: "/products?category=home" },
+    { icon: Grid3x3, label: "More", href: "/products" },
+  ];
+
   return (
     <section className="bg-background border-b border-border/60">
       <div className="container py-4 md:py-6">
+        {/* MOBILE — horizontal category pills */}
+        <div className="lg:hidden mb-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex items-start gap-4 min-w-max pb-1">
+            {pillCategories.map((c) => {
+              const Icon = c.icon;
+              return (
+                <Link
+                  key={c.label}
+                  to={c.href}
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-[60px]"
+                >
+                  <span className={cn(
+                    "h-12 w-12 rounded-full inline-flex items-center justify-center border transition-colors",
+                    c.active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-primary border-border hover:border-primary"
+                  )}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className={cn(
+                    "text-[11px] font-medium text-center leading-tight",
+                    c.active ? "text-primary" : "text-foreground/80"
+                  )}>
+                    {c.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="grid grid-cols-12 gap-4">
           {/* SIDEBAR — categories (hidden on mobile) */}
           <aside className="block col-span-3">
@@ -417,7 +459,7 @@ export function HeroSection() {
             </div>
 
             {/* THREE smaller rotating banners */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <MiniBanner
                 label="Featured Shops"
                 items={shopItems}
