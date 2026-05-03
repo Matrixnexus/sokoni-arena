@@ -241,11 +241,11 @@ export function HeroSection() {
 
   // Top category pills (mobile only)
   const pillCategories = [
-    { icon: Grid3x3, label: "All", href: "/products", active: true },
-    { icon: Smartphone, label: "Phones", href: "/products?category=electronics" },
+    { icon: Grid3x3, label: "All Categories", href: "/products", active: true },
+    { icon: Smartphone, label: "Phones & Tablets", href: "/products?category=electronics" },
     { icon: Cpu, label: "Electronics", href: "/products?category=electronics" },
     { icon: Shirt, label: "Fashion", href: "/products?category=fashion" },
-    { icon: Home, label: "Home", href: "/products?category=home" },
+    { icon: Home, label: "Home & Living", href: "/products?category=home" },
     { icon: Grid3x3, label: "More", href: "/products" },
   ];
 
@@ -253,23 +253,23 @@ export function HeroSection() {
     <section className="bg-background border-b border-border/60">
       <div className="container py-4 md:py-6">
         {/* MOBILE — horizontal category pills */}
-        <div className="lg:hidden mb-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex items-start gap-4 min-w-max pb-1">
+        <div className="lg:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex items-start gap-3 min-w-max pb-1">
             {pillCategories.map((c) => {
               const Icon = c.icon;
               return (
                 <Link
                   key={c.label}
                   to={c.href}
-                  className="flex flex-col items-center gap-1.5 shrink-0 w-[60px]"
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-[64px]"
                 >
                   <span className={cn(
-                    "h-12 w-12 rounded-full inline-flex items-center justify-center border transition-colors",
+                    "h-14 w-14 inline-flex items-center justify-center transition-colors",
                     c.active
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-primary border-border hover:border-primary"
+                      ? "rounded-2xl bg-primary text-primary-foreground shadow-md"
+                      : "rounded-full bg-card text-primary border border-border"
                   )}>
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-6 w-6" strokeWidth={2} />
                   </span>
                   <span className={cn(
                     "text-[11px] font-medium text-center leading-tight",
@@ -285,7 +285,7 @@ export function HeroSection() {
 
         <div className="grid grid-cols-12 gap-4">
           {/* SIDEBAR — categories (hidden on mobile) */}
-          <aside className="block col-span-3">
+          <aside className="hidden lg:block lg:col-span-3">
             <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
               <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-semibold">
                 <Grid3x3 className="h-4 w-4" />
