@@ -162,7 +162,8 @@ export function SokoniAssistant() {
           onClick={() => setOpen(true)}
           aria-label="Open Sokoni Assistant"
           className={cn(
-            "fixed bottom-6 right-6 z-[60] h-14 w-14 rounded-full",
+            "fixed right-4 z-[60] h-14 w-14 rounded-full",
+            "bottom-24 md:bottom-6 md:right-6",
             "bg-primary text-primary-foreground shadow-2xl",
             "flex items-center justify-center hover:scale-105 transition-transform",
             "ring-4 ring-primary/20"
@@ -177,8 +178,9 @@ export function SokoniAssistant() {
       {open && (
         <div
           className={cn(
-            "fixed bottom-6 right-6 z-[60] w-[min(380px,calc(100vw-2rem))]",
-            "h-[min(620px,calc(100vh-3rem))]",
+            "fixed right-4 md:right-6 z-[60] w-[min(380px,calc(100vw-2rem))]",
+            "bottom-24 md:bottom-6",
+            "h-[min(620px,calc(100vh-8rem))] md:h-[min(620px,calc(100vh-3rem))]",
             "bg-background border border-border rounded-2xl shadow-2xl",
             "flex flex-col overflow-hidden"
           )}
