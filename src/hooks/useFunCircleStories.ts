@@ -59,7 +59,7 @@ const buildReactionCounts = (
 
   reactions.forEach((reaction) => {
     const currentCounts = countsByStory.get(reaction.story_id) || { ...defaultReactionCounts };
-    currentCounts[reaction.reaction_type] += 1;
+    currentCounts[reaction.reaction_type as keyof ReactionCounts] += 1;
     countsByStory.set(reaction.story_id, currentCounts);
   });
 
@@ -76,13 +76,17 @@ export function useFunCircleStories() {
   const fetchStories = async () => {
     setIsLoading(true);
     try {
-      // Get all non-expired stories (public visibility)
+      // FIX: Use a relational join to fetch profiles directly with stories
+      // This ensures 'profile' is never undefined if the record exists
       const { data, error } = await supabase
         .from("fun_circle_stories")
-        .select("*")
+        .select(`
+          *,
+          profile:profiles_public(username, avatar_url)
+        `)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
-        .limit(50); // Limit for performance
+        .limit(50);
 
       if (error) throw error;
       if (!data || data.length === 0) {
@@ -90,19 +94,10 @@ export function useFunCircleStories() {
         return;
       }
 
-      const userIds = [...new Set(data.map(s => s.user_id))];
       const storyIds = data.map(s => s.id);
 
-      // Parallel fetch for profiles, reactions, and mentions
-      const [profilesResult, profilesFullResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
-        supabase
-          .from("profiles_public")
-          .select("user_id, username, avatar_url")
-          .in("user_id", userIds),
-        supabase
-          .from("profiles")
-          .select("user_id, username, full_name, avatar_url")
-          .in("user_id", userIds),
+      // Parallel fetch for reactions and mentions only
+      const [reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
         user
           ? supabase
               .from("fun_circle_story_reactions")
@@ -120,25 +115,10 @@ export function useFunCircleStories() {
           .in("story_id", storyIds),
       ]);
 
-      const profilesPublic = profilesResult.data || [];
-      const profilesFull = (profilesFullResult as any)?.data || [];
-      const profileById = new Map<string, { username: string; avatar_url: string | null }>();
-      for (const p of profilesFull as any[]) {
-        profileById.set(p.user_id, {
-          username: p.username || p.full_name || "User",
-          avatar_url: p.avatar_url ?? null,
-        });
-      }
-      for (const p of profilesPublic as any[]) {
-        const existing = profileById.get(p.user_id);
-        profileById.set(p.user_id, {
-          username: p.username || existing?.username || "User",
-          avatar_url: p.avatar_url ?? existing?.avatar_url ?? null,
-        });
-      }
       const userReactions = new Map<string, ReactionType>(
         (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type as ReactionType])
       );
+      
       const reactionCountsByStory = buildReactionCounts(
         ((allReactionsResult.data || []) as Array<{ story_id: string; reaction_type: ReactionType }>)
       );
@@ -149,19 +129,20 @@ export function useFunCircleStories() {
         mentionsByStory.set(m.story_id, [...existing, m.mentioned_user_id]);
       });
 
-      // Build stories with all related data
-      const storiesWithProfiles = data.map(story => {
+      // Build stories using the joined profile data
+      const storiesWithFullData = data.map(story => {
         return {
           ...story,
           images: Array.isArray(story.images) ? story.images : [],
           reactions_count: reactionCountsByStory.get(story.id) || { ...defaultReactionCounts },
-          profile: profileById.get(story.user_id),
+          // Fallback to "User" only if the join actually returns nothing
+          profile: story.profile || { username: "User", avatar_url: null },
           user_reaction: userReactions.get(story.id) || null,
           mentions: mentionsByStory.get(story.id) || [],
         };
       });
 
-      setStories(storiesWithProfiles);
+      setStories(storiesWithFullData);
     } catch (error) {
       console.error("Error fetching stories:", error);
     } finally {
@@ -171,7 +152,6 @@ export function useFunCircleStories() {
 
   const fetchImagesUploadedToday = async () => {
     if (!user) return;
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -181,59 +161,39 @@ export function useFunCircleStories() {
       .eq("user_id", user.id)
       .gte("created_at", today.toISOString());
 
-    const count = (data || []).reduce((sum, story) => {
-      return sum + (story.images?.length || 0);
-    }, 0);
-
+    const count = (data || []).reduce((sum, story) => sum + (story.images?.length || 0), 0);
     setImagesUploadedToday(count);
   };
 
   const createStory = async (content: string, images: string[], mentionedUserIds: string[] = []) => {
     if (!user) return { error: new Error("Not authenticated") };
-
     if (imagesUploadedToday + images.length > 5) {
       toast({
-        title: "Image limit reached",
+        title: "Limit reached",
         description: `You can only upload ${5 - imagesUploadedToday} more images today.`,
         variant: "destructive",
       });
-      return { error: new Error("Image limit exceeded") };
+      return { error: new Error("Limit exceeded") };
     }
 
     const { data, error } = await supabase
       .from("fun_circle_stories")
-      .insert({
-        user_id: user.id,
-        content,
-        images,
-      })
+      .insert({ user_id: user.id, content, images })
       .select()
       .single();
 
     if (error) {
-      toast({
-        title: "Failed to create story",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
       return { error };
     }
 
-    // Add mentions if any
     if (mentionedUserIds.length > 0 && data) {
       await supabase.from("fun_circle_mentions").insert(
-        mentionedUserIds.map(userId => ({
-          story_id: data.id,
-          mentioned_user_id: userId,
-        }))
+        mentionedUserIds.map(id => ({ story_id: data.id, mentioned_user_id: id }))
       );
     }
 
-    toast({
-      title: "Story posted!",
-      description: "Your story will disappear in 24 hours.",
-    });
-
+    toast({ title: "Story posted!" });
     await fetchStories();
     await fetchImagesUploadedToday();
     return { data };
@@ -241,82 +201,27 @@ export function useFunCircleStories() {
 
   const addReaction = async (storyId: string, reactionType: ReactionType) => {
     if (!user) return;
-
-    // Check if user already has a reaction
     const story = stories.find(s => s.id === storyId);
     const existingReaction = story?.user_reaction;
 
-    if (existingReaction) {
-      if (existingReaction === reactionType) {
-        // Remove reaction if same type
-        await removeReaction(storyId);
-        return;
-      }
-      // Update reaction
-      const { error } = await supabase
-        .from("fun_circle_story_reactions")
-        .update({ reaction_type: reactionType })
-        .eq("story_id", storyId)
-        .eq("user_id", user.id);
+    if (existingReaction === reactionType) {
+      await removeReaction(storyId);
+      return;
+    }
 
-      if (error) {
-        toast({
-          title: "Reaction failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        setStories(prev =>
-          prev.map(s => {
-            if (s.id === storyId) {
-              const newCounts = { ...s.reactions_count };
-              if (existingReaction) newCounts[existingReaction] = Math.max(0, newCounts[existingReaction] - 1);
-              newCounts[reactionType]++;
-              return { ...s, user_reaction: reactionType, reactions_count: newCounts };
-            }
-            return s;
-          })
-        );
-        void fetchStories();
-      }
+    const { error } = await supabase
+      .from("fun_circle_story_reactions")
+      .upsert({ story_id: storyId, user_id: user.id, reaction_type: reactionType }, { onConflict: 'story_id,user_id' });
+
+    if (error) {
+      toast({ title: "Reaction failed", description: error.message, variant: "destructive" });
     } else {
-      // Insert new reaction
-      const { error } = await supabase
-        .from("fun_circle_story_reactions")
-        .insert({
-          story_id: storyId,
-          user_id: user.id,
-          reaction_type: reactionType,
-        });
-
-      if (error) {
-        toast({
-          title: "Reaction failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        setStories(prev =>
-          prev.map(s => {
-            if (s.id === storyId) {
-              const newCounts = { ...s.reactions_count };
-              newCounts[reactionType]++;
-              return { ...s, user_reaction: reactionType, reactions_count: newCounts };
-            }
-            return s;
-          })
-        );
-        void fetchStories();
-      }
+      await fetchStories();
     }
   };
 
   const removeReaction = async (storyId: string) => {
     if (!user) return;
-
-    const story = stories.find(s => s.id === storyId);
-    const existingReaction = story?.user_reaction;
-
     const { error } = await supabase
       .from("fun_circle_story_reactions")
       .delete()
@@ -324,29 +229,14 @@ export function useFunCircleStories() {
       .eq("user_id", user.id);
 
     if (error) {
-      toast({
-        title: "Could not remove reaction",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else if (existingReaction) {
-      setStories(prev =>
-        prev.map(s => {
-          if (s.id === storyId) {
-            const newCounts = { ...s.reactions_count };
-            newCounts[existingReaction] = Math.max(0, newCounts[existingReaction] - 1);
-            return { ...s, user_reaction: null, reactions_count: newCounts };
-          }
-          return s;
-        })
-      );
-      void fetchStories();
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      await fetchStories();
     }
   };
 
   const deleteStory = async (storyId: string) => {
     if (!user) return;
-
     const { error } = await supabase
       .from("fun_circle_stories")
       .delete()
@@ -359,50 +249,28 @@ export function useFunCircleStories() {
     }
   };
 
-  // Comments functions
   const getComments = async (storyId: string): Promise<Comment[]> => {
     const { data, error } = await supabase
       .from("fun_circle_comments")
-      .select("*")
+      .select("*, profile:profiles_public(username, avatar_url)")
       .eq("story_id", storyId)
       .order("created_at", { ascending: true });
 
-    if (error) return [];
-
-    const userIds = [...new Set(data?.map(c => c.user_id) || [])];
-    const { data: profiles } = await supabase
-      .from("profiles_public")
-      .select("user_id, username, avatar_url")
-      .in("user_id", userIds);
-
-    return (data || []).map(comment => ({
-      ...comment,
-      profile: profiles?.find(p => p.user_id === comment.user_id),
-    }));
+    return error ? [] : (data as Comment[]);
   };
 
   const addComment = async (storyId: string, content: string) => {
     if (!user) return null;
-
     const { data, error } = await supabase
       .from("fun_circle_comments")
-      .insert({
-        story_id: storyId,
-        user_id: user.id,
-        content,
-      })
+      .insert({ story_id: storyId, user_id: user.id, content })
       .select()
       .single();
 
     if (error) {
-      toast({
-        title: "Failed to add comment",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
       return null;
     }
-
     return data;
   };
 
@@ -411,22 +279,13 @@ export function useFunCircleStories() {
     fetchImagesUploadedToday();
   }, [user]);
 
-  // Subscribe to realtime updates
   useEffect(() => {
     const channel = supabase
-      .channel("fun_circle_stories_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "fun_circle_stories" },
-        () => {
-          fetchStories();
-        }
-      )
+      .channel("fun_circle_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fun_circle_stories" }, () => fetchStories())
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   return {
