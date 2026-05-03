@@ -238,9 +238,50 @@ export function HeroSection() {
     return shuffle(items).slice(0, 8);
   }, [shops]);
 
+  // Top category pills (mobile only)
+  const pillCategories = [
+    { icon: Grid3x3, label: "All", href: "/products", active: true },
+    { icon: Smartphone, label: "Phones", href: "/products?category=electronics" },
+    { icon: Cpu, label: "Electronics", href: "/products?category=electronics" },
+    { icon: Shirt, label: "Fashion", href: "/products?category=fashion" },
+    { icon: Home, label: "Home", href: "/products?category=home" },
+    { icon: Grid3x3, label: "More", href: "/products" },
+  ];
+
   return (
     <section className="bg-background border-b border-border/60">
       <div className="container py-4 md:py-6">
+        {/* MOBILE — horizontal category pills */}
+        <div className="lg:hidden mb-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex items-start gap-4 min-w-max pb-1">
+            {pillCategories.map((c) => {
+              const Icon = c.icon;
+              return (
+                <Link
+                  key={c.label}
+                  to={c.href}
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-[60px]"
+                >
+                  <span className={cn(
+                    "h-12 w-12 rounded-full inline-flex items-center justify-center border transition-colors",
+                    c.active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-primary border-border hover:border-primary"
+                  )}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className={cn(
+                    "text-[11px] font-medium text-center leading-tight",
+                    c.active ? "text-primary" : "text-foreground/80"
+                  )}>
+                    {c.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="grid grid-cols-12 gap-4">
           {/* SIDEBAR — categories (hidden on mobile) */}
           <aside className="hidden lg:block col-span-3 xl:col-span-3">
