@@ -76,35 +76,36 @@ export function useFunCircleStories() {
   const fetchStories = async () => {
     setIsLoading(true);
     try {
-      // FIX: Use a relational join to fetch profiles directly with stories
-      // This ensures 'profile' is never undefined if the record exists
-      const { data, error } = await supabase
+      // 1. Fetch stories first (without the join to ensure they appear)
+      const { data: storyData, error: storyError } = await supabase
         .from("fun_circle_stories")
-        .select(`
-          *,
-          profile:profiles_public(username, avatar_url)
-        `)
+        .select("*")
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(50);
-
-      if (error) throw error;
-      if (!data || data.length === 0) {
+  
+      if (storyError) throw storyError;
+      if (!storyData || storyData.length === 0) {
         setStories([]);
         return;
       }
-
-      const storyIds = data.map(s => s.id);
-
-      // Parallel fetch for reactions and mentions only
-      const [reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
-        user
-          ? supabase
-              .from("fun_circle_story_reactions")
-              .select("story_id, reaction_type")
-              .eq("user_id", user.id)
-              .in("story_id", storyIds)
-          : Promise.resolve({ data: null }),
+  
+      // 2. Get unique User IDs from the stories
+      const userIds = [...new Set(storyData.map(s => s.user_id))];
+      const storyIds = storyData.map(s => s.id);
+  
+      // 3. Fetch everything else in parallel
+      const [profilesResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
+        supabase
+          .from("profiles_public")
+          .select("user_id, username, avatar_url")
+          .in("user_id", userIds),
+        user ? supabase
+                .from("fun_circle_story_reactions")
+                .select("story_id, reaction_type")
+                .eq("user_id", user.id)
+                .in("story_id", storyIds)
+             : Promise.resolve({ data: null }),
         supabase
           .from("fun_circle_mentions")
           .select("story_id, mentioned_user_id")
@@ -114,35 +115,40 @@ export function useFunCircleStories() {
           .select("story_id, reaction_type")
           .in("story_id", storyIds),
       ]);
-
-      const userReactions = new Map<string, ReactionType>(
-        (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type as ReactionType])
+  
+      // 4. Create a Map for quick profile lookups
+      const profileMap = new Map();
+      (profilesResult.data || []).forEach(p => {
+        profileMap.set(p.user_id, p);
+      });
+  
+      const userReactions = new Map(
+        (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type])
       );
       
-      const reactionCountsByStory = buildReactionCounts(
-        ((allReactionsResult.data || []) as Array<{ story_id: string; reaction_type: ReactionType }>)
-      );
-
-      const mentionsByStory = new Map<string, string[]>();
+      const reactionCountsByStory = buildReactionCounts(allReactionsResult.data || []);
+  
+      const mentionsByStory = new Map();
       (mentionsResult.data || []).forEach(m => {
         const existing = mentionsByStory.get(m.story_id) || [];
         mentionsByStory.set(m.story_id, [...existing, m.mentioned_user_id]);
       });
-
-      // Build stories using the joined profile data
-      const storiesWithFullData = data.map(story => {
-        return {
-          ...story,
-          images: Array.isArray(story.images) ? story.images : [],
-          reactions_count: reactionCountsByStory.get(story.id) || { ...defaultReactionCounts },
-          // Fallback to "User" only if the join actually returns nothing
-          profile: story.profile || { username: "User", avatar_url: null },
-          user_reaction: userReactions.get(story.id) || null,
-          mentions: mentionsByStory.get(story.id) || [],
-        };
-      });
-
-      setStories(storiesWithFullData);
+  
+      // 5. Build the final array
+      const finalStories = storyData.map(story => ({
+        ...story,
+        images: Array.isArray(story.images) ? story.images : [],
+        reactions_count: reactionCountsByStory.get(story.id) || { ...defaultReactionCounts },
+        // Check the map, fallback to a readable "Unknown" object
+        profile: profileMap.get(story.user_id) || { 
+          username: `User_${story.user_id.slice(0,4)}`, 
+          avatar_url: null 
+        },
+        user_reaction: userReactions.get(story.id) || null,
+        mentions: mentionsByStory.get(story.id) || [],
+      }));
+  
+      setStories(finalStories);
     } catch (error) {
       console.error("Error fetching stories:", error);
     } finally {
