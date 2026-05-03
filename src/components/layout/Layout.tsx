@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ export function Layout({ children }: LayoutProps) {
       <Navbar />
       <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }
