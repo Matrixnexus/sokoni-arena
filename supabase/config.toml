@@ -21,5 +21,8 @@ verify_jwt = false
 [functions.sokoni-assistant]
 verify_jwt = false
 
+[functions.mpesa-stk-push]
+verify_jwt = false
+
 [functions.prerender]
 verify_jwt = false

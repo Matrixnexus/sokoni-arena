@@ -1,65 +1,49 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Loader2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Sparkles, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
+import { AdPaymentSelector, type AdPlan } from "./AdPaymentSelector";
 
-interface Props {
-  shopId: string;
-  shopName: string;
-}
+interface Props { shopId: string; shopName: string; }
+
+const PLANS: AdPlan[] = [
+  { id: "month", label: "1 Month", price: 299,  durationDays: 30 },
+  { id: "year",  label: "1 Year",  price: 3000, durationDays: 365 },
+];
 
 export function FeaturedShopRequestButton({ shopId, shopName }: Props) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [existing, setExisting] = useState<any>(null);
-  const [duration, setDuration] = useState("7");
 
   useEffect(() => {
     if (!user || !shopId) return;
     (supabase.from("shop_featured_requests" as any) as any)
-      .select("*")
-      .eq("shop_id", shopId)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .select("*").eq("shop_id", shopId).eq("user_id", user.id)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data }: any) => setExisting(data));
   }, [user, shopId]);
 
-  const handleSubmit = async () => {
+  const handlePaid = async (plan: AdPlan) => {
     if (!user) return;
-    setIsLoading(true);
-    const { error } = await (supabase.from("shop_featured_requests" as any) as any).insert({
-      shop_id: shopId,
-      user_id: user.id,
-      duration_days: parseInt(duration),
+    await (supabase.from("shop_featured_requests" as any) as any).insert({
+      shop_id: shopId, user_id: user.id, duration_days: plan.durationDays,
     });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Request submitted!", description: "Pending admin approval." });
-      setIsOpen(false);
-      const { data } = await (supabase.from("shop_featured_requests" as any) as any)
-        .select("*").eq("shop_id", shopId).eq("user_id", user.id)
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      setExisting(data);
-    }
-    setIsLoading(false);
+    setIsOpen(false);
+    const { data } = await (supabase.from("shop_featured_requests" as any) as any)
+      .select("*").eq("shop_id", shopId).eq("user_id", user.id)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    setExisting(data);
   };
 
   if (existing) {
     const cfg: Record<string, any> = {
-      pending: { icon: Clock, color: "bg-amber-100 text-amber-700", label: "Pending" },
+      pending:  { icon: Clock,       color: "bg-amber-100 text-amber-700", label: "Pending" },
       approved: { icon: CheckCircle, color: "bg-green-100 text-green-700", label: "Featured" },
-      rejected: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Declined" },
+      rejected: { icon: XCircle,     color: "bg-red-100 text-red-700",     label: "Declined" },
     };
     const c = cfg[existing.status] || cfg.pending;
     const Icon = c.icon;
@@ -75,39 +59,17 @@ export function FeaturedShopRequestButton({ shopId, shopName }: Props) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Promote to Featured Shops List</DialogTitle>
+          <DialogTitle>Add to Featured Shops</DialogTitle>
           <DialogDescription>
-            Request to add "{shopName}" to the hand-picked Elite Storefronts shown after Featured Listings. Admin approval required.
+            Hand-picked placement for "{shopName}" in the Elite Storefronts rail.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label>Duration</Label>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">7 Days</SelectItem>
-                <SelectItem value="14">14 Days</SelectItem>
-                <SelectItem value="30">30 Days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="p-4 rounded-lg bg-muted">
-            <h4 className="font-medium mb-2">Featured List Benefits:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Hand-picked placement after Featured Listings</li>
-              <li>• Premium gradient title showcase</li>
-              <li>• 3× more shop visits on average</li>
-              <li>• Verified trust signal for buyers</li>
-            </ul>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}Submit Request
-            </Button>
-          </div>
-        </div>
+        <AdPaymentSelector
+          plans={PLANS}
+          reference={shopId}
+          description="Featured Shop"
+          onPaymentInitiated={handlePaid}
+        />
       </DialogContent>
     </Dialog>
   );
