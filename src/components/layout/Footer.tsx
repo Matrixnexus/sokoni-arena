@@ -19,6 +19,7 @@ const footerLinks = {
   legal: [
     { label: "Help & Contact", href: "/help" },
     { label: "FAQ", href: "/faq" },
+    { label: "Report Suspicious Activity", href: "/report" },
     { label: "Terms & Conditions", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
   ],

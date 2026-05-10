@@ -41,6 +41,7 @@ const Help = lazy(() => import("./pages/Help"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Report = lazy(() => import("./pages/Report"));
 
 // Optimized QueryClient with better caching
 const queryClient = new QueryClient({
@@ -117,6 +118,7 @@ const App = () => (
                 <Route path="/contact" element={<Help />} />
                 <Route path="/support" element={<Help />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/report" element={<Report />} />
                 <Route path="/products/:id" element={<ListingDetail />} />
                 <Route path="/services/:id" element={<ListingDetail />} />
                 <Route path="/events/:id" element={<ListingDetail />} />

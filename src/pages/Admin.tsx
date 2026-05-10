@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Shield, Users, Package, FileText, Search, Trash2, Eye, Loader2, AlertTriangle, Star, Store, Crown } from "lucide-react";
+import { Shield, Users, Package, FileText, Search, Trash2, Eye, Loader2, AlertTriangle, Star, Store, Crown, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
@@ -21,6 +21,7 @@ import { AdminCreateShop } from "@/components/admin/AdminCreateShop";
 import { AdminShopEditor } from "@/components/admin/AdminShopEditor";
 import { AdminUserEditor } from "@/components/admin/AdminUserEditor";
 import { ShopAdsManager } from "@/components/admin/ShopAdsManager";
+import { ReportsManager } from "@/components/admin/ReportsManager";
 
 interface Listing {
   id: string;
@@ -170,6 +171,7 @@ export default function Admin() {
               <TabsTrigger value="shops"><Store className="h-4 w-4 mr-1" />Shops</TabsTrigger>
               <TabsTrigger value="shop-ads">Shop Ads</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="reports"><ShieldAlert className="h-4 w-4 mr-1" />Reports</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -233,6 +235,7 @@ export default function Admin() {
             {activeTab === "shop-ads" && <ShopAdsManager isAdmin />}
 
             {activeTab === "users" && <AdminUserEditor />}
+            {activeTab === "reports" && <ReportsManager />}
 
             {activeTab === "audit" && (
               <Card>
