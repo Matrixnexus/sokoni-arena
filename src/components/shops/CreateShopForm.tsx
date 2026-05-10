@@ -170,15 +170,35 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
         </div>
       </div>
       <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 text-sm text-amber-700 dark:text-amber-300">
-        ⚠️ Your shop request will be reviewed by the admin team. You'll be notified once approved.
+        {isAdmin
+          ? "⚠️ Admin: shop will be created free of charge after submission."
+          : "💳 A one-time activation fee is required: KES 299 / month or KES 3,000 / year. Your request enters the admin review queue once payment is initiated."}
       </div>
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-          Submit Request
+          {isAdmin ? "Submit Request" : "Continue to Payment"}
         </Button>
       </div>
+
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay to request your shop</DialogTitle>
+            <DialogDescription>
+              Activation fee for "{form.name || "your shop"}". After payment, an admin will review and approve.
+            </DialogDescription>
+          </DialogHeader>
+          <AdPaymentSelector
+            plans={SHOP_PLANS}
+            reference={form.slug || "shop-creation"}
+            description="Shop Creation"
+            onPaymentInitiated={async () => { await submitRequest(); }}
+          />
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
+
