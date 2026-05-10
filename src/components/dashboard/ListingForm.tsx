@@ -1,20 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { Loader2 } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
+import { AdPaymentSelector, type AdPlan } from "./AdPaymentSelector";
 import {
   getSectionsForType,
   findSection,
   type ListingTypeScope,
 } from "@/lib/categories";
+
+const FREE_LISTING_QUOTA = 3;
+const LISTING_FEE_PLANS: AdPlan[] = [
+  { id: "single", label: "Publish 1 Listing", price: 10, durationDays: 0 },
+];
 
 interface ListingFormProps {
   listing?: any;
