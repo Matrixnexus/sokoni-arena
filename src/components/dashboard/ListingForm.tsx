@@ -414,6 +414,22 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         )}
       </div>
 
+
+      {/* Quota / payment notice */}
+      {!listing && !isAdmin && activeListingsCount !== null && (
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            requiresPayment
+              ? "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+              : "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          {requiresPayment
+            ? "💳 You've used your 3 free listings. Each new listing costs KES 10 (M-Pesa)."
+            : `🎁 ${freeRemaining} free listing${freeRemaining === 1 ? "" : "s"} remaining on your account.`}
+        </div>
+      )}
+
       {/* Buttons */}
       <div className="flex gap-3 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
@@ -421,9 +437,31 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         </Button>
         <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          {listing ? "Update Listing" : "Create Listing"}
+          {listing
+            ? "Update Listing"
+            : requiresPayment
+              ? "Pay KES 10 & Publish"
+              : "Create Listing"}
         </Button>
       </div>
+
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay to publish your listing</DialogTitle>
+            <DialogDescription>
+              Your free quota of {FREE_LISTING_QUOTA} listings is used up. Pay KES 10 via M-Pesa to publish this one.
+            </DialogDescription>
+          </DialogHeader>
+          <AdPaymentSelector
+            plans={LISTING_FEE_PLANS}
+            reference={user?.id || "listing-fee"}
+            description="Listing publication fee"
+            onPaymentInitiated={async () => { await saveListing(); }}
+          />
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
+
