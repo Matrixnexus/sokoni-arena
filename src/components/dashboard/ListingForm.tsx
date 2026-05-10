@@ -107,6 +107,16 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
       return;
     }
 
+    if (requiresPayment) {
+      setPaymentOpen(true);
+      return;
+    }
+
+    await saveListing();
+  };
+
+  const saveListing = async () => {
+    if (!user) return;
     setIsLoading(true);
 
     const listingData: any = {
