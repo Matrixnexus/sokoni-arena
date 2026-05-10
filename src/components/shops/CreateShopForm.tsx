@@ -26,7 +26,7 @@ interface CreateShopFormProps {
 }
 
 export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
