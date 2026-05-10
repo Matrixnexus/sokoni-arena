@@ -1,20 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { Loader2 } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
+import { AdPaymentSelector, type AdPlan } from "./AdPaymentSelector";
 import {
   getSectionsForType,
   findSection,
   type ListingTypeScope,
 } from "@/lib/categories";
+
+const FREE_LISTING_QUOTA = 3;
+const LISTING_FEE_PLANS: AdPlan[] = [
+  { id: "single", label: "Publish 1 Listing", price: 10, durationDays: 0 },
+];
 
 interface ListingFormProps {
   listing?: any;
@@ -24,9 +31,24 @@ interface ListingFormProps {
 }
 
 export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFormProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [activeListingsCount, setActiveListingsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user || listing) return;
+    supabase
+      .from("listings")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .then(({ count }) => setActiveListingsCount(count ?? 0));
+  }, [user, listing]);
+
+  const requiresPayment =
+    !listing && !isAdmin && (activeListingsCount ?? 0) >= FREE_LISTING_QUOTA;
+  const freeRemaining = Math.max(0, FREE_LISTING_QUOTA - (activeListingsCount ?? 0));
 
   const [formData, setFormData] = useState({
     title: listing?.title || "",
@@ -85,6 +107,16 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
       return;
     }
 
+    if (requiresPayment) {
+      setPaymentOpen(true);
+      return;
+    }
+
+    await saveListing();
+  };
+
+  const saveListing = async () => {
+    if (!user) return;
     setIsLoading(true);
 
     const listingData: any = {
@@ -149,6 +181,7 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
     }
 
     setIsLoading(false);
+    setPaymentOpen(false);
   };
 
   return (
@@ -381,6 +414,22 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         )}
       </div>
 
+
+      {/* Quota / payment notice */}
+      {!listing && !isAdmin && activeListingsCount !== null && (
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            requiresPayment
+              ? "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+              : "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          {requiresPayment
+            ? "💳 You've used your 3 free listings. Each new listing costs KES 10 (M-Pesa)."
+            : `🎁 ${freeRemaining} free listing${freeRemaining === 1 ? "" : "s"} remaining on your account.`}
+        </div>
+      )}
+
       {/* Buttons */}
       <div className="flex gap-3 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
@@ -388,9 +437,31 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         </Button>
         <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          {listing ? "Update Listing" : "Create Listing"}
+          {listing
+            ? "Update Listing"
+            : requiresPayment
+              ? "Pay KES 10 & Publish"
+              : "Create Listing"}
         </Button>
       </div>
+
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay to publish your listing</DialogTitle>
+            <DialogDescription>
+              Your free quota of {FREE_LISTING_QUOTA} listings is used up. Pay KES 10 via M-Pesa to publish this one.
+            </DialogDescription>
+          </DialogHeader>
+          <AdPaymentSelector
+            plans={LISTING_FEE_PLANS}
+            reference={user?.id || "listing-fee"}
+            description="Listing publication fee"
+            onPaymentInitiated={async () => { await saveListing(); }}
+          />
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
+

@@ -10,8 +10,7 @@ import { AdPaymentSelector, type AdPlan } from "./AdPaymentSelector";
 interface ShopPromotionButtonProps { shopId: string; shopName: string; }
 
 const PLANS: AdPlan[] = [
-  { id: "month", label: "1 Month", price: 299,  durationDays: 30 },
-  { id: "year",  label: "1 Year",  price: 3000, durationDays: 365 },
+  { id: "month", label: "1 Month — Premium", price: 150, durationDays: 30 },
 ];
 
 export function ShopPromotionButton({ shopId, shopName }: ShopPromotionButtonProps) {

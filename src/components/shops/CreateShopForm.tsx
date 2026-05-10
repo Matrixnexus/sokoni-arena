@@ -9,6 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AdPaymentSelector, type AdPlan } from "@/components/dashboard/AdPaymentSelector";
+
+const SHOP_PLANS: AdPlan[] = [
+  { id: "month", label: "1 Month", price: 299, durationDays: 30 },
+  { id: "year",  label: "1 Year",  price: 3000, durationDays: 365 },
+];
 
 import { sectionLabelsForType } from "@/lib/categories";
 const SHOP_CATEGORIES = sectionLabelsForType("all");
@@ -19,9 +26,10 @@ interface CreateShopFormProps {
 }
 
 export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [form, setForm] = useState({
@@ -57,14 +65,8 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
 
   const updateField = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitRequest = async () => {
     if (!user) return;
-    if (!form.name.trim() || !form.slug.trim()) {
-      toast({ title: "Shop name is required", variant: "destructive" });
-      return;
-    }
-
     setIsSubmitting(true);
     const { error } = await supabase.from("shop_creation_requests").insert({
       user_id: user.id,
@@ -96,6 +98,21 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
       onSuccess();
     }
     setIsSubmitting(false);
+    setPaymentOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!form.name.trim() || !form.slug.trim()) {
+      toast({ title: "Shop name is required", variant: "destructive" });
+      return;
+    }
+    if (isAdmin) {
+      await submitRequest();
+    } else {
+      setPaymentOpen(true);
+    }
   };
 
   return (
@@ -153,15 +170,35 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
         </div>
       </div>
       <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 text-sm text-amber-700 dark:text-amber-300">
-        ⚠️ Your shop request will be reviewed by the admin team. You'll be notified once approved.
+        {isAdmin
+          ? "⚠️ Admin: shop will be created free of charge after submission."
+          : "💳 A one-time activation fee is required: KES 299 / month or KES 3,000 / year. Your request enters the admin review queue once payment is initiated."}
       </div>
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-          Submit Request
+          {isAdmin ? "Submit Request" : "Continue to Payment"}
         </Button>
       </div>
+
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay to request your shop</DialogTitle>
+            <DialogDescription>
+              Activation fee for "{form.name || "your shop"}". After payment, an admin will review and approve.
+            </DialogDescription>
+          </DialogHeader>
+          <AdPaymentSelector
+            plans={SHOP_PLANS}
+            reference={form.slug || "shop-creation"}
+            description="Shop Creation"
+            onPaymentInitiated={async () => { await submitRequest(); }}
+          />
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
+
