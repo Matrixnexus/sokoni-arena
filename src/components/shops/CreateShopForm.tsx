@@ -29,6 +29,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [form, setForm] = useState({
