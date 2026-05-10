@@ -65,14 +65,8 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
 
   const updateField = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitRequest = async () => {
     if (!user) return;
-    if (!form.name.trim() || !form.slug.trim()) {
-      toast({ title: "Shop name is required", variant: "destructive" });
-      return;
-    }
-
     setIsSubmitting(true);
     const { error } = await supabase.from("shop_creation_requests").insert({
       user_id: user.id,
@@ -104,6 +98,21 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
       onSuccess();
     }
     setIsSubmitting(false);
+    setPaymentOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!form.name.trim() || !form.slug.trim()) {
+      toast({ title: "Shop name is required", variant: "destructive" });
+      return;
+    }
+    if (isAdmin) {
+      await submitRequest();
+    } else {
+      setPaymentOpen(true);
+    }
   };
 
   return (
