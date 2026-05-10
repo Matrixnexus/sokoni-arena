@@ -181,6 +181,7 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
     }
 
     setIsLoading(false);
+    setPaymentOpen(false);
   };
 
   return (
