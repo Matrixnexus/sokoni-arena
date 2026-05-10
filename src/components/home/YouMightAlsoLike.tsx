@@ -20,7 +20,7 @@ interface RecListing {
 }
 
 const REFRESH_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_ITEMS = 12;
+const MAX_ITEMS = 12; // 4 cols × 3 rows
 
 function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -135,7 +135,7 @@ export const YouMightAlsoLike = memo(function YouMightAlsoLike() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="aspect-square rounded-xl" />
@@ -145,7 +145,7 @@ export const YouMightAlsoLike = memo(function YouMightAlsoLike() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {items.map((l) => {
               const img =
                 parseImages(l.images)?.[0] ||

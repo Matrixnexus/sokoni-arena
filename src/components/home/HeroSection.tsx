@@ -69,10 +69,10 @@ function MiniBanner({
     : "products";
 
   return (
-    <Link
-      to={cur ? `/${path}/${cur.id}` : fallbackHref}
+    <div
+      aria-hidden="true"
       className={cn(
-        "group relative h-[130px] sm:h-[120px] rounded-2xl overflow-hidden shadow-sm border border-border/60",
+        "group relative h-[130px] sm:h-[120px] rounded-2xl overflow-hidden shadow-sm border border-border/60 cursor-default select-none pointer-events-none",
         "bg-gradient-to-br text-white flex flex-col",
         accent
       )}
@@ -122,7 +122,7 @@ function MiniBanner({
           ))}
         </div>
       )}
-    </Link>
+    </div>
   );
 }
 
@@ -142,10 +142,9 @@ function MobileHeroAdStrip({ items }: { items: BannerItem[] }) {
       : cur.listing_type === "service" ? "services" : "events";
 
   return (
-    <Link
-      to={`/${path}/${cur.id}`}
-      className="sm:hidden mt-3 flex items-center gap-2 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 p-1.5 pr-3 max-w-[58%] hover:bg-white/20 transition-colors"
-      aria-label={cur.title}
+    <div
+      aria-hidden="true"
+      className="sm:hidden mt-3 flex items-center gap-2 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 p-1.5 pr-3 max-w-[58%] cursor-default select-none pointer-events-none"
     >
       <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white/90">
         <img
@@ -168,7 +167,7 @@ function MobileHeroAdStrip({ items }: { items: BannerItem[] }) {
           </p>
         )}
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -379,12 +378,11 @@ export function HeroSection() {
 
               {/* RIGHT — rotating listing image inside a soft white spotlight (no collision) */}
               {current && (
-                <Link
-                  to={`/${categoryPath}/${current.id}`}
+                <div
+                  aria-hidden="true"
                   className="absolute right-2 sm:right-5 md:right-7 top-1/2 -translate-y-1/2 z-[5]
                              w-[40%] sm:w-[44%] md:w-[44%] aspect-square
-                             flex items-center justify-center group pointer-events-auto"
-                  aria-label={current.title}
+                             flex items-center justify-center group pointer-events-none select-none"
                 >
                   {/* White spotlight card behind image */}
                   <div className="absolute inset-2 sm:inset-3 rounded-3xl bg-white/95 shadow-2xl
@@ -418,7 +416,7 @@ export function HeroSection() {
                                    [clip-path:polygon(50%_0%,_61%_12%,_78%_5%,_82%_22%,_98%_28%,_90%_43%,_100%_58%,_85%_67%,_88%_85%,_70%_85%,_61%_100%,_50%_88%,_39%_100%,_30%_85%,_12%_85%,_15%_67%,_0%_58%,_10%_43%,_2%_28%,_18%_22%,_22%_5%,_39%_12%)]">
                     <Percent className="h-5 w-5 sm:h-6 sm:w-6" />
                   </span>
-                </Link>
+                </div>
               )}
 
               {/* Carousel arrows — hidden on mobile to prevent overlap with CTAs/image */}

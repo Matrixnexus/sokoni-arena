@@ -19,6 +19,7 @@ const footerLinks = {
   legal: [
     { label: "Help & Contact", href: "/help" },
     { label: "FAQ", href: "/faq" },
+    { label: "Report Suspicious Activity", href: "/report" },
     { label: "Terms & Conditions", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
   ],
@@ -150,8 +151,8 @@ export function Footer() {
                 <Phone className="h-4 w-4 mt-0.5 shrink-0 text-background/70" />
                 <div>
                   <p className="text-background/50 text-xs mb-0.5">Call / WhatsApp</p>
-                  <a href="tel:+254708532145" className="block text-background/70 hover:text-primary transition-colors">
-                    0708 532 145
+                  <a href="tel:+254708083263" className="block text-background/70 hover:text-primary transition-colors">
+                    0708 083 263
                   </a>
                   <a href="tel:+254708444210" className="block text-background/70 hover:text-primary transition-colors">
                     0708 444 210
