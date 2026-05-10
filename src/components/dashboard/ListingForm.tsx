@@ -31,9 +31,24 @@ interface ListingFormProps {
 }
 
 export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFormProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [activeListingsCount, setActiveListingsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user || listing) return;
+    supabase
+      .from("listings")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .then(({ count }) => setActiveListingsCount(count ?? 0));
+  }, [user, listing]);
+
+  const requiresPayment =
+    !listing && !isAdmin && (activeListingsCount ?? 0) >= FREE_LISTING_QUOTA;
+  const freeRemaining = Math.max(0, FREE_LISTING_QUOTA - (activeListingsCount ?? 0));
 
   const [formData, setFormData] = useState({
     title: listing?.title || "",
