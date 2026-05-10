@@ -9,6 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AdPaymentSelector, type AdPlan } from "@/components/dashboard/AdPaymentSelector";
+
+const SHOP_PLANS: AdPlan[] = [
+  { id: "month", label: "1 Month", price: 299, durationDays: 30 },
+  { id: "year",  label: "1 Year",  price: 3000, durationDays: 365 },
+];
 
 import { sectionLabelsForType } from "@/lib/categories";
 const SHOP_CATEGORIES = sectionLabelsForType("all");
